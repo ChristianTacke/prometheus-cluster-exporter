@@ -336,12 +336,14 @@ func (e *exporter) buildLustreMetadataMetrics(jobs []jobInfo, users userInfoMap,
 
 			userInfo, ok := users[uid]
 			if !ok {
-				return errors.New("uid not found in users map: " + strconv.Itoa(uid))
+				log.Warning("uid not found in users map: ", uid) // Skip only this entry
+				continue
 			}
 
 			groupInfo, ok := groups[userInfo.gid]
 			if !ok {
-				return errors.New("gid not found in groups map: " + strconv.Itoa(userInfo.gid))
+				log.Warning("gid not found in groups map: ", userInfo.gid) // Skip only this entry
+				continue
 			}
 
 			e.procMetadataOperationsMetric.WithLabelValues(
@@ -440,12 +442,14 @@ func (e *exporter) buildLustreThroughputMetrics(jobs []jobInfo, users userInfoMa
 
 			userInfo, ok := users[uid]
 			if !ok {
-				return errors.New("uid not found in users map: " + strconv.Itoa(uid))
+				log.Warning("uid not found in users map: ", uid) // Skip only this entry
+				continue
 			}
 
 			groupInfo, ok := groups[userInfo.gid]
 			if !ok {
-				return errors.New("gid not found in groups map: " + strconv.Itoa(userInfo.gid))
+				log.Warning("gid not found in groups map: ", userInfo.gid) // Skip only this entry
+				continue
 			}
 
 			procMetric.WithLabelValues(procName, groupInfo.group, userInfo.user).Add(thInfo.throughput)

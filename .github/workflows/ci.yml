@@ -26,3 +26,4 @@ jobs:
         with:
           name: prometheus-cluster-exporter
           path: prometheus-cluster-exporter
+          archive: false

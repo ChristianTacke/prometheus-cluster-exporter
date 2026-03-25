@@ -19,6 +19,9 @@ jobs:
         with:
           go-version: '1.17'
 
+      - name: Vet
+        run: go vet ./...
+
       - name: Build
         run: CGO_ENABLED=0 go build -o prometheus-cluster-exporter .
 

@@ -19,8 +19,14 @@ jobs:
         with:
           go-version: '1.17'
 
+      - name: Vet
+        run: go vet ./... && echo 'go vet: no issues found.'
+
       - name: Build
         run: CGO_ENABLED=0 go build -o prometheus-cluster-exporter .
+
+      - name: Test
+        run: go test -v ./...
 
       - uses: actions/upload-artifact@v7
         with:

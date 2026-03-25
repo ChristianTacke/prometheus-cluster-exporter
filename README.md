@@ -68,7 +68,7 @@ Since the forked processes do not have a timeout handling, they might block for 
 It is very unlikely that reexecuting the processes will solve the problem of being blocked.
 Therefore multiple scrapes at a time will be prevented by the exporter.  
 
-The following warning will be displayed on afterward scrape executions, were a scrape is still active:  
+The following debug message will be displayed on afterward scrape executions, where a scrape is still active:  
     *"Collect is still active... - Skipping now"*
 
 Besides that, the cluster\_exporter\_scrape\_ok metric will be set to 0 for skipped scrape attempts.  

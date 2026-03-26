@@ -29,9 +29,9 @@ const (
 	namespace               = "cluster"
 	namespaceInternals      = "cluster_exporter"
 	httpApi                 = "/api/v1/query"
-	queryMetadataOperations = "round(sum by(target,jobid)(irate(lustre_job_stats_total[__TIME_RANGE__])>=1))"
-	queryJobReadBytes       = "sum by(jobid)(irate(lustre_job_read_bytes_total[__TIME_RANGE__])!=0)"
-	queryJobWriteBytes      = "sum by(jobid)(irate(lustre_job_write_bytes_total[__TIME_RANGE__])!=0)"
+	queryMetadataOperations = "round(sum by(target,jobid)(rate(lustre_job_stats_total[__TIME_RANGE__])>=1))"
+	queryJobReadBytes       = "sum by(jobid)(rate(lustre_job_read_bytes_total[__TIME_RANGE__])!=0)"
+	queryJobWriteBytes      = "sum by(jobid)(rate(lustre_job_write_bytes_total[__TIME_RANGE__])!=0)"
 	defaultLogLevel         = "INFO"
 	defaultPort             = "9846"
 	defaultRequestTimeout   = 15

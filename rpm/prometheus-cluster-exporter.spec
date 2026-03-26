@@ -9,7 +9,7 @@ Summary:        Prometheus exporter for Lustre IO throughput metrics associated 
 Group:          Monitoring
 
 License:        GPL 3.0
-URL:            https://github.com/GSI-HPC/prometheus-cluster-exporter
+URL:            https://github.com/ChristianTacke/prometheus-cluster-exporter
 Source0:        %{name}-%{version}.tar.gz
 
 Requires(pre): shadow-utils

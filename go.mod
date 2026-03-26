@@ -1,6 +1,6 @@
-module github.com/GSI-HPC/prometheus-cluster-exporter
+module github.com/ChristianTacke/prometheus-cluster-exporter
 
-go 1.17
+go 1.23
 
 require (
 	github.com/buger/jsonparser v1.1.1

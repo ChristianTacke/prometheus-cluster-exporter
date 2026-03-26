@@ -33,10 +33,10 @@ The getent command is required for the uid to user and group mapping used for th
 | ---------- | ----------------- | ---------------------------------------------------------------------------------------------------------------------------------- |
 | version    | false             | Print version                                                                                                                      | 
 | promserver | \-                | [REQUIRED] Prometheus Server to be used e.g. http://prometheus-server:9090                                                         |
-| log        | INFO              | Sets log level - INFO, DEBUG or TRACE                                                                                              | 
+| log        | ERROR             | Sets log level - ERROR, WARNING, INFO, DEBUG or TRACE                                                                              | 
 | port       | 9846              | The port to listen on for HTTP requests                                                                                            |
 | timeout    | 15                | HTTP request timeout in seconds for exporting Lustre Jobstats on Prometheus HTTP API                                               |
-| timerange  | 1m                | Time range used for rate function on the retrieving Lustre metrics from Prometheus - A three digit number with unit s, m, h or d   |
+| timerange  | 1m                | Time range used for rate function on the retrieving Lustre metrics from Prometheus - A number (1–3 digits) with unit s, m, h or d  |
 
 ### Running in a Productive Environment
 
@@ -54,48 +54,13 @@ Depending on the required resolution and runtime of the exporter,
 See [docs/architecture.md](docs/architecture.md) for an internal overview and dataflow explanation.
 
 Cluster exporter metrics are prefixed with `cluster_`.
+See [docs/metrics.md](docs/metrics.md) for the full metrics reference including labels and descriptions.
 
-### Global
+In short, the exporter provides:
 
-These metrics are always exported.
-
-| Metric                              | Labels        | Description                                                       |
-| ----------------------------------- | ------------- | ----------------------------------------------------------------- |
-| exporter\_scrape\_ok                | -             | Indicates if the scrape of the exporter was successful or not.    |
-| exporter\_stage\_execution\_seconds | name          | Execution duration in seconds spend in a specific exporter stage. |
-
-### Metadata
-
-Metadata operations are exposed per MDT, since it has been shown that it is a very helpful information to have.
-
-#### **Jobs**
-
-| Metric                     | Labels                | Description                                                          |
-| ---------------------------| --------------------- | -------------------------------------------------------------------- |
-| job\_metadata\_operations  | account, user, target | Total metadata operations of all jobs per account and user on a MDT. |
-
-#### **Process Names**
-
-| Metric                     | Labels                                      | Description                                                             |
-| -------------------------- | ------------------------------------------- | ----------------------------------------------------------------------- |
-| proc\_metadata\_operations | proc\_name, group\_name, user\_name, target | Total metadata operations of process names per group and user on a MDT. |
-
-
-### Throughput
-
-#### **Jobs**
-
-| Metric                        | Labels        | Description                                                                           |
-| ----------------------------- | ------------- | ------------------------------------------------------------------------------------- |
-| job\_read\_throughput\_bytes  | account, user | Total IO read throughput of all jobs on the cluster per account in bytes per second.  |
-| job\_write\_throughput\_bytes | account, user | Total IO write throughput of all jobs on the cluster per account in bytes per second. |
-
-#### **Process Names**
-
-| Metric                         | Labels                              | Description                                                                                       |
-| ------------------------------ | ----------------------------------- | ------------------------------------------------------------------------------------------------- |
-| proc\_read\_throughput\_bytes  | proc\_name, group\_name, user\_name | Total IO read throughput of process names on the cluster per group and user in bytes per second.  |
-| proc\_write\_throughput\_bytes | proc\_name, group\_name, user\_name | Total IO write throughput of process names on the cluster per group and user in bytes per second. |
+- **Exporter health** — `cluster_exporter_scrape_ok` and per-stage execution times.
+- **SLURM job metrics** — metadata operations and read/write throughput per account and user.
+- **Process name metrics** — the same, but for non-SLURM processes, resolved via UID to user/group names.
 
 ## Multiple Scrape Prevention
 
@@ -103,7 +68,7 @@ Since the forked processes do not have a timeout handling, they might block for 
 It is very unlikely that reexecuting the processes will solve the problem of being blocked.
 Therefore multiple scrapes at a time will be prevented by the exporter.  
 
-The following warning will be displayed on afterward scrape executions, were a scrape is still active:  
+The following debug message will be displayed on afterward scrape executions, where a scrape is still active:  
     *"Collect is still active... - Skipping now"*
 
 Besides that, the cluster\_exporter\_scrape\_ok metric will be set to 0 for skipped scrape attempts.  

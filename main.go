@@ -12,6 +12,7 @@ import (
 	"flag"
 	"fmt"
 	"net/http"
+	"net/url"
 	"os"
 	"regexp"
 	"strconv"
@@ -28,10 +29,9 @@ const (
 	namespace               = "cluster"
 	namespaceInternals      = "cluster_exporter"
 	httpApi                 = "/api/v1/query"
-	queryParameter          = "?query=" // Query parameter are encoded in hex with % and 2 digits in the URL.
-	queryMetadataOperations = "round%28sum%20by%28target%2Cjobid%29%28irate%28lustre_job_stats_total[__TIME_RANGE__]%29%3E=1%29%29"
-	queryJobReadBytes       = "sum%20by%28jobid%29%28irate%28lustre_job_read_bytes_total[__TIME_RANGE__]%29!=0%29"
-	queryJobWriteBytes      = "sum%20by%28jobid%29%28irate%28lustre_job_write_bytes_total[__TIME_RANGE__]%29!=0%29"
+	queryMetadataOperations = "round(sum by(target,jobid)(rate(lustre_job_stats_total[__TIME_RANGE__])>=1))"
+	queryJobReadBytes       = "sum by(jobid)(rate(lustre_job_read_bytes_total[__TIME_RANGE__])!=0)"
+	queryJobWriteBytes      = "sum by(jobid)(rate(lustre_job_write_bytes_total[__TIME_RANGE__])!=0)"
 	defaultLogLevel         = "INFO"
 	defaultPort             = "9846"
 	defaultRequestTimeout   = 15
@@ -91,12 +91,12 @@ func newUrlExportLustreMetrics(server string, timeRange string) *urlExportLustre
 
 	validateTimeRange(timeRange)
 
-	serverQueryEndpoint := server + httpApi + queryParameter
+	serverQueryEndpoint := server + httpApi + "?query="
 
 	return &urlExportLustreMetrics{
-		metadataOperations: serverQueryEndpoint + strings.Replace(queryMetadataOperations, "__TIME_RANGE__", timeRange, 1),
-		jobReadBytes:       serverQueryEndpoint + strings.Replace(queryJobReadBytes, "__TIME_RANGE__", timeRange, 1),
-		jobWriteBytes:      serverQueryEndpoint + strings.Replace(queryJobWriteBytes, "__TIME_RANGE__", timeRange, 1),
+		metadataOperations: serverQueryEndpoint + url.QueryEscape(strings.Replace(queryMetadataOperations, "__TIME_RANGE__", timeRange, 1)),
+		jobReadBytes:       serverQueryEndpoint + url.QueryEscape(strings.Replace(queryJobReadBytes, "__TIME_RANGE__", timeRange, 1)),
+		jobWriteBytes:      serverQueryEndpoint + url.QueryEscape(strings.Replace(queryJobWriteBytes, "__TIME_RANGE__", timeRange, 1)),
 	}
 }
 

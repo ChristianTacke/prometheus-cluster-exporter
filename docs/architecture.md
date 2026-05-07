@@ -8,11 +8,11 @@ This exporter is a **meta-exporter**: it acts as a bridge between raw Lustre fil
 
 | Component | File | Role |
 |---|---|---|
-| Entry point & PromQL queries | `main.go` | Parses flags, registers the collector, defines the three PromQL query templates |
-| HTTP client | `client_prom_http.go` | Issues GET requests to the upstream Prometheus HTTP API |
-| SLURM client | `client_slurm_squeue.go` | Runs `squeue` to list running jobs |
-| User/group client | `client_getent.go` | Runs `getent passwd` / `getent group` to build UID→user and GID→group maps |
-| Collector / correlator | `exporter.go` | Implements `prometheus.Collector`; fetches, parses, correlates, and emits all metrics |
+| Entry point & PromQL queries | [`main.go`](../main.go) | Parses flags, registers the collector, defines the three PromQL query templates |
+| HTTP client | [`client_prom_http.go`](../client_prom_http.go) | Issues GET requests to the upstream Prometheus HTTP API |
+| SLURM client | [`client_slurm_squeue.go`](../client_slurm_squeue.go) | Runs `squeue` to list running jobs |
+| User/group client | [`client_getent.go`](../client_getent.go) | Runs `getent passwd` / `getent group` to build UID→user and GID→group maps |
+| Collector / correlator | [`exporter.go`](../exporter.go) | Implements `prometheus.Collector`; fetches, parses, correlates, and emits all metrics |
 
 ---
 
@@ -64,7 +64,7 @@ Prometheus scrapes :9846/metrics
 The Lustre `jobid` label produced by the Lustre exporter takes two forms:
 
 - **Plain integer** (e.g. `"12345"`) — a SLURM job ID. The exporter looks it up in the `squeue` result and emits `cluster_job_*` metrics labelled with `account` and `user`.
-- **`procname.uid`** (e.g. `"mpirun.1001"`) — a non-SLURM process. The exporter splits on `.`, resolves the UID via the `getent` map, and emits `cluster_proc_*` metrics labelled with `proc_name`, `group_name`, and `user_name`.
+- **`procname.uid`** (e.g. `"mpirun.1001"`) — a non-SLURM process. The exporter treats the last `.`-separated segment as the UID and everything before it as the process name (so `"my.app.1001"` yields `proc_name=my.app`, `uid=1001`). The UID is then resolved via the `getent` maps, and `cluster_proc_*` metrics are emitted with labels `proc_name`, `group_name`, and `user_name`.
 
 For metadata metrics only MDT targets matching the pattern `^.*-MDT[[:xdigit:]]{4}$` (e.g. `lustre-MDT0000`) are kept; OST targets are skipped.
 
@@ -72,28 +72,17 @@ For metadata metrics only MDT targets matching the pattern `^.*-MDT[[:xdigit:]]{
 
 ## Concurrency and Scrape Guard
 
-`exporter.go` uses a `sync.Mutex` and a `scrapeActive bool` flag to prevent overlapping scrapes. If a scrape is still in progress when Prometheus polls again, the new request is skipped immediately and `cluster_exporter_scrape_ok` is set to `0`. A warning is logged:
+`exporter.go` uses a `sync.Mutex` and a `scrapeActive bool` flag to prevent overlapping scrapes. If a scrape is still in progress when Prometheus polls again, the new request is skipped immediately and `cluster_exporter_scrape_ok` is set to `0`. A debug message is logged:
 
 > *"Collect is still active... - Skipping now"*
 
-The three data-gathering operations (SLURM + two `getent` calls) run as concurrent goroutines and communicate results back over buffered channels. The three metric-building stages then execute sequentially; each stage's wall-clock time is recorded in `cluster_exporter_stage_execution_seconds`.
+The three data-gathering operations (SLURM + two `getent` calls) run as concurrent goroutines and communicate results back over channels. The three metric-building stages then execute sequentially; each stage's wall-clock time is recorded in `cluster_exporter_stage_execution_seconds`.
 
 ---
 
-## Metrics Summary
+## Metrics
 
-All cluster metrics are prefixed with `cluster_`.
-
-| Metric | Labels | Description |
-|---|---|---|
-| `cluster_exporter_scrape_ok` | — | `1` if scrape succeeded, `0` if skipped or failed |
-| `cluster_exporter_stage_execution_seconds` | `name` | Wall-clock time per metric-building stage |
-| `cluster_job_metadata_operations` | `account`, `user`, `target` | Metadata ops for SLURM jobs per MDT |
-| `cluster_proc_metadata_operations` | `proc_name`, `group_name`, `user_name`, `target` | Metadata ops for non-SLURM processes per MDT |
-| `cluster_job_read_throughput_bytes` | `account`, `user` | Read throughput for SLURM jobs (bytes/s) |
-| `cluster_job_write_throughput_bytes` | `account`, `user` | Write throughput for SLURM jobs (bytes/s) |
-| `cluster_proc_read_throughput_bytes` | `proc_name`, `group_name`, `user_name` | Read throughput for non-SLURM processes (bytes/s) |
-| `cluster_proc_write_throughput_bytes` | `proc_name`, `group_name`, `user_name` | Write throughput for non-SLURM processes (bytes/s) |
+See [metrics.md](metrics.md) for the full metrics reference.
 
 ---
 
